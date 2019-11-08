@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"go.etcd.io/etcd/raft/raftpb"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Handler for a http based key-value store backed by raft
@@ -32,72 +33,76 @@ type httpKVAPI struct {
 func (h *httpKVAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	key := r.RequestURI
 	defer r.Body.Close()
-	switch {
-	case r.Method == "PUT":
-		v, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Printf("Failed to read on PUT (%v)\n", err)
-			http.Error(w, "Failed on PUT", http.StatusBadRequest)
-			return
-		}
+	if (key == "/metrics") {
+		promhttp.Handler().ServeHTTP(w, r)
+	} else {
+		switch {
+		case r.Method == "PUT":
+			v, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				log.Printf("Failed to read on PUT (%v)\n", err)
+				http.Error(w, "Failed on PUT", http.StatusBadRequest)
+				return
+			}
 
-		h.store.Propose(key, string(v))
+			h.store.Propose(key, string(v))
 
-		// Optimistic-- no waiting for ack from raft. Value is not yet
-		// committed so a subsequent GET on the key may return old value
-		w.WriteHeader(http.StatusNoContent)
-	case r.Method == "GET":
-		if v, ok := h.store.Lookup(key); ok {
-			w.Write([]byte(v))
-		} else {
-			http.Error(w, "Failed to GET", http.StatusNotFound)
-		}
-	case r.Method == "POST":
-		url, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Printf("Failed to read on POST (%v)\n", err)
-			http.Error(w, "Failed on POST", http.StatusBadRequest)
-			return
-		}
+			// Optimistic-- no waiting for ack from raft. Value is not yet
+			// committed so a subsequent GET on the key may return old value
+			w.WriteHeader(http.StatusNoContent)
+		case r.Method == "GET":
+			if v, ok := h.store.Lookup(key); ok {
+				w.Write([]byte(v))
+			} else {
+				http.Error(w, "Failed to GET", http.StatusNotFound)
+			}
+		case r.Method == "POST":
+			url, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				log.Printf("Failed to read on POST (%v)\n", err)
+				http.Error(w, "Failed on POST", http.StatusBadRequest)
+				return
+			}
 
-		nodeId, err := strconv.ParseUint(key[1:], 0, 64)
-		if err != nil {
-			log.Printf("Failed to convert ID for conf change (%v)\n", err)
-			http.Error(w, "Failed on POST", http.StatusBadRequest)
-			return
-		}
+			nodeId, err := strconv.ParseUint(key[1:], 0, 64)
+			if err != nil {
+				log.Printf("Failed to convert ID for conf change (%v)\n", err)
+				http.Error(w, "Failed on POST", http.StatusBadRequest)
+				return
+			}
 
-		cc := raftpb.ConfChange{
-			Type:    raftpb.ConfChangeAddNode,
-			NodeID:  nodeId,
-			Context: url,
-		}
-		h.confChangeC <- cc
+			cc := raftpb.ConfChange{
+				Type:    raftpb.ConfChangeAddNode,
+				NodeID:  nodeId,
+				Context: url,
+			}
+			h.confChangeC <- cc
 
-		// As above, optimistic that raft will apply the conf change
-		w.WriteHeader(http.StatusNoContent)
-	case r.Method == "DELETE":
-		nodeId, err := strconv.ParseUint(key[1:], 0, 64)
-		if err != nil {
-			log.Printf("Failed to convert ID for conf change (%v)\n", err)
-			http.Error(w, "Failed on DELETE", http.StatusBadRequest)
-			return
-		}
+			// As above, optimistic that raft will apply the conf change
+			w.WriteHeader(http.StatusNoContent)
+		case r.Method == "DELETE":
+			nodeId, err := strconv.ParseUint(key[1:], 0, 64)
+			if err != nil {
+				log.Printf("Failed to convert ID for conf change (%v)\n", err)
+				http.Error(w, "Failed on DELETE", http.StatusBadRequest)
+				return
+			}
 
-		cc := raftpb.ConfChange{
-			Type:   raftpb.ConfChangeRemoveNode,
-			NodeID: nodeId,
-		}
-		h.confChangeC <- cc
+			cc := raftpb.ConfChange{
+				Type:   raftpb.ConfChangeRemoveNode,
+				NodeID: nodeId,
+			}
+			h.confChangeC <- cc
 
-		// As above, optimistic that raft will apply the conf change
-		w.WriteHeader(http.StatusNoContent)
-	default:
-		w.Header().Set("Allow", "PUT")
-		w.Header().Add("Allow", "GET")
-		w.Header().Add("Allow", "POST")
-		w.Header().Add("Allow", "DELETE")
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			// As above, optimistic that raft will apply the conf change
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			w.Header().Set("Allow", "PUT")
+			w.Header().Add("Allow", "GET")
+			w.Header().Add("Allow", "POST")
+			w.Header().Add("Allow", "DELETE")
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
 	}
 }
 
