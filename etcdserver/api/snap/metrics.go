@@ -71,6 +71,24 @@ var (
 		// highest bucket start of 0.001 sec * 2^13 == 8.192 sec
 		Buckets: prometheus.ExponentialBuckets(0.001, 2, 14),
 	})
+
+	NumPropose = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "raftexample",
+		Subsystem: "network",
+		Name:      "num_proposals",
+		Help:      "The total number of proposals sent.",
+	})
+
+	PutLatency = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: "raftexample",
+		Subsystem: "network",
+		Name:      "put_latency",
+		Help:      "The latency of a put request.",
+
+		// lowest bucket start of upper bound 0.001 sec (1 ms) with factor 2
+		// highest bucket start of 0.001 sec * 2^13 == 8.192 sec
+		Buckets: prometheus.ExponentialBuckets(0.001, 2, 14),
+	})
 )
 
 func init() {
@@ -79,4 +97,6 @@ func init() {
 	prometheus.MustRegister(snapFsyncSec)
 	prometheus.MustRegister(snapDBSaveSec)
 	prometheus.MustRegister(snapDBFsyncSec)
+	prometheus.MustRegister(NumPropose)
+	prometheus.MustRegister(PutLatency)
 }

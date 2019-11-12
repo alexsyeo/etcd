@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"log"
 	"sync"
+	"time"
 
 	"go.etcd.io/etcd/etcdserver/api/snap"
 )
@@ -30,6 +31,7 @@ type kvstore struct {
 	mu          sync.RWMutex
 	kvStore     map[string]string // current committed key-value pairs
 	snapshotter *snap.Snapshotter
+	proposedVals map[string]time.Time
 }
 
 type kv struct {
@@ -38,7 +40,7 @@ type kv struct {
 }
 
 func newKVStore(snapshotter *snap.Snapshotter, proposeC chan<- string, commitC <-chan *string, errorC <-chan error) *kvstore {
-	s := &kvstore{proposeC: proposeC, kvStore: make(map[string]string), snapshotter: snapshotter}
+	s := &kvstore{proposeC: proposeC, kvStore: make(map[string]string), proposedVals: make(map[string]time.Time), snapshotter: snapshotter}
 	// replay log into key-value map
 	s.readCommits(commitC, errorC)
 	// read commits from raft into kvStore map until error
@@ -58,6 +60,8 @@ func (s *kvstore) Propose(k string, v string) {
 	if err := gob.NewEncoder(&buf).Encode(kv{k, v}); err != nil {
 		log.Fatal(err)
 	}
+	snap.NumPropose.Inc()
+	s.proposedVals[k+v] = time.Now()
 	s.proposeC <- buf.String()
 }
 
@@ -87,6 +91,11 @@ func (s *kvstore) readCommits(commitC <-chan *string, errorC <-chan error) {
 		}
 		s.mu.Lock()
 		s.kvStore[dataKv.Key] = dataKv.Val
+		_, ok := s.proposedVals[dataKv.Key + dataKv.Val]
+		if ok {
+			snap.PutLatency.Observe(time.Since(s.proposedVals[dataKv.Key + dataKv.Val]).Seconds())
+			delete(s.proposedVals, dataKv.Key + dataKv.Val)
+		}
 		s.mu.Unlock()
 	}
 	if err, ok := <-errorC; ok {
