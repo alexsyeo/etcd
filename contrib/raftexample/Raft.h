@@ -3,6 +3,7 @@
 #define P_RAFT_H_
 #include "Prt.h"
 int hello();
+void makeMainMachine();
 #ifdef __cplusplus
 
 

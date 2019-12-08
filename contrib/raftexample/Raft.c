@@ -1,7 +1,23 @@
 #include "Raft.h"
 
+PRT_PROCESS* ContainerProcess;
+
 int hello(){
     return 1;
+}
+
+void makeMainMachine() {
+    //PRT_VALUE* payload = PrtMkNullValue();
+    printf("hello1\n");
+	PRT_UINT32 machineId;
+	PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("Client", &machineId);
+    printf("hello2\n");
+	if (foundMainMachine == PRT_FALSE)
+	{
+		printf("%s\n", "FAILED TO FIND TestMachine");
+    } else {
+        printf("%s\n", "FOUND TestMachine");
+    }
 }
 // Type universe for program:
 static PRT_STRING P_NMDTUP_N[] = { "Leader", "Term" };

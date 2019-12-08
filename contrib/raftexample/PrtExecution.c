@@ -1869,8 +1869,10 @@ PrtStartProcess(
 PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtLookupMachineByName(_In_ PRT_STRING name, _Out_ PRT_UINT32* id)
 {
 	*id = 0;
+	printf("hello: %d\n", program->nMachines);
 	for (PRT_UINT32 i = 0; i < program->nMachines; i++)
 	{
+		printf("%d\n", i);
 		if (strcmp(name, program->machines[i]->name) == 0)
 		{
 			*id = i;
