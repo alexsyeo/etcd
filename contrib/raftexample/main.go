@@ -14,14 +14,16 @@
 
 package main
 
-import (
-	"flag"
-	"strings"
-
-	"go.etcd.io/etcd/raft/raftpb"
-)
+//#include "Raft.h"
+import "C"
+import "flag"
+import "strings"
+import "go.etcd.io/etcd/raft/raftpb"
+import "log"
 
 func main() {
+	i := C.hello()
+	log.Printf("hello: %d", i)
 	cluster := flag.String("cluster", "http://127.0.0.1:9021", "comma separated cluster peers")
 	id := flag.Int("id", 1, "node ID")
 	kvport := flag.Int("port", 9121, "key-value server port")
