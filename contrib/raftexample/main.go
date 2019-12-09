@@ -26,13 +26,14 @@ import "sync"
 var wg = &sync.WaitGroup{}
 
 func main() {
+	clusterManager := C.makeMainMachine()
 	cluster := flag.String("cluster", "http://127.0.0.1:9021", "comma separated cluster peers")
 	flag.Parse()
 	cluster_list := strings.Split(*cluster, ",")
 	for i := 0; i < len(cluster_list); i++ {
-		log.Printf("hi")
 		kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
 		kvport = kvport + 1
+		C.sendAddMachineEvent(clusterManager)
 		wg.Add(1)
 		go makeKvStore(cluster_list, i+1, kvport, false)
 	}

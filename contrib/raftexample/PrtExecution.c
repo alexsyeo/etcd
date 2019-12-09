@@ -145,6 +145,7 @@ PrtMkMachinePrivate(
 	_In_	         PRT_VALUE* payload
 )
 {
+
 	PrtLockMutex(process->processLock);
 
 	PRT_UINT32 i;
@@ -173,6 +174,7 @@ PrtMkMachinePrivate(
 		process->machines = newMachines;
 		process->machineCount = 2 * machineCount;
 	}
+
 
 	// Allocate memory for state machine context
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)PrtCalloc(1, sizeof(PRT_MACHINEINST_PRIV));
@@ -264,16 +266,16 @@ PrtMkMachinePrivate(
 	context->inheritedActionSetCompact = (PRT_UINT32*)PrtCalloc(packSize, sizeof(PRT_UINT32));
 	context->currentActionSetCompact = (PRT_UINT32*)PrtCalloc(packSize, sizeof(PRT_UINT32));
 
+
+
 	//
 	//Initialize state machine lock
 	//
 	context->stateMachineLock = PrtCreateMutex();
-
 	//
 	//Log
 	//
-	PrtLog(PRT_STEP_CREATE, NULL, context, NULL, NULL);
-
+	// PrtLog(PRT_STEP_CREATE, NULL, context, NULL, NULL);
 	PrtUnlockMutex(process->processLock);
 
 	//
@@ -374,8 +376,9 @@ PrtSendPrivate(
 	//
 	//Log
 	//
-	PrtLog(PRT_STEP_ENQUEUE, state, context, event, payload);
+	// PrtLog(PRT_STEP_ENQUEUE, state, context, event, payload);
 	PrtUnlockMutex(context->stateMachineLock);
+
 	PrtScheduleWork(context);
 }
 
@@ -483,7 +486,7 @@ PrtGoto(
 
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-	PrtLog(PRT_STEP_GOTO, &state, context, NULL, payload);
+	// PrtLog(PRT_STEP_GOTO, &state, context, NULL, payload);
 }
 
 void
@@ -530,7 +533,7 @@ PrtRaise(
 
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-	PrtLog(PRT_STEP_RAISE, &state, context, event, payload);
+	// PrtLog(PRT_STEP_RAISE, &state, context, event, payload);
 }
 
 #pragma region Receive Implementation
@@ -607,6 +610,8 @@ lh_value receive_handler_action(lh_value rargsv)
 void* prt_receive_handler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN action, PRT_VALUE*** args)
 {
 	receive_handler_args_t rargs = { (PRT_MACHINEINST*)context, args, action };
+	lh_handle(&_prt_handler_def, lh_value_ptr(context), &receive_handler_action, lh_value_any_ptr(&
+		rargs));
 	return lh_ptr_value(lh_handle(&_prt_handler_def, lh_value_ptr(context), &receive_handler_action, lh_value_any_ptr(&
 		rargs)));
 }
@@ -655,7 +660,7 @@ PrtPushState(
 
 	context->currentState = stateIndex;
 
-	PrtLog(PRT_STEP_PUSH, &state, context, NULL, NULL);
+	// PrtLog(PRT_STEP_PUSH, &state, context, NULL, NULL);
 }
 
 void
@@ -678,7 +683,10 @@ PrtPopState(
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 
+	
+
 	const PRT_UINT16 length = context->callStack.length;
+	// printf("%s\n", "print");
 	if (length == 0)
 	{
 		// The stack can become empty because of either an unhandled event or en explicit pop.
@@ -699,6 +707,8 @@ PrtPopState(
 		return PRT_FALSE;
 	}
 
+	// printf("%s\n", "print");
+
 	context->callStack.length = length - 1;
 	const PRT_STATESTACK_INFO popped_state = context->callStack.stateStack[length - 1];
 	context->currentState = popped_state.stateIndex;
@@ -715,14 +725,16 @@ PrtPopState(
 	PrtUpdateCurrentActionsSet(context);
 	PrtUpdateCurrentDeferredSet(context);
 
+// printf("%s\n", "print");
+
 	if (isPopStatement)
 	{
-		PrtLog(PRT_STEP_POP, &state, context, NULL, NULL);
+		// PrtLog(PRT_STEP_POP, &state, context, NULL, NULL);
 	}
 	else
 	{
 		// unhandled event
-		PrtLog(PRT_STEP_UNHANDLED, &state, context, NULL, NULL);
+		// PrtLog(PRT_STEP_UNHANDLED, &state, context, NULL, NULL);
 	}
 	return PRT_FALSE;
 }
@@ -813,10 +825,11 @@ PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-	PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
+	// PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* entryFun = currentState->entryFun;
+
 	return PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
 }
 
@@ -824,7 +837,7 @@ PRT_BOOLEAN PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
 {
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
+	// PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* exitFun = currentState->exitFun;
@@ -883,7 +896,7 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
 		}
 
 		// on eventValue do <fun>
-		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
+		// PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
 		return PrtCallEventHandler(context, do_fun->implementation, &context->handlerArguments);
 	}
 
@@ -915,12 +928,16 @@ PrtStepStateMachine(
 {
 	PrtAssert(context->isRunning, "The caller should have set context->isRunning to TRUE");
 
+	// printf("%s\n", "after assert isRunning");
+
 	switch (context->operation)
 	{
 	case StateEntry:
+		printf("%s\n", "StateEntry");
 		context->postHandlerOperation = DequeueOrReceive;
 		return PrtCallEntryHandler(context);
 	case DequeueOrReceive:
+		printf("%s\n", "DequeueOrReceive");
 		PrtLockMutex(context->stateMachineLock);
 		// If the machine is blocked on a receive statement, then
 		// PrtDequeueEvent is guaranteed to return an event meant
@@ -934,38 +951,47 @@ PrtStepStateMachine(
 		// blocked event handler
 		return did_dequeue && PrtDequeueOrReceive(context, trigger, payload);
 	case HandleCurrentEvent:
+		printf("%s\n", "HandleCurrentEvent");
 		// Either a raise or a normal dequeue; offload to complex function
 		context->postHandlerOperation = DequeueOrReceive;
 		return PrtHandleEvent(context);
 	case ExitState:
+	printf("%s\n", "ExitState");
 		return PrtCallExitHandler(context);
 	case PopState:
+	printf("%s\n", "PopState");
 		PRT_DBG_ASSERT(context->postHandlerOperation == PopState,
 			"pop should only be reachable through ExitState(PopState)");
 		context->operation = DequeueOrReceive;
 		context->postHandlerOperation = DequeueOrReceive;
 		return !PrtPopState(context, PRT_TRUE);
 	case GotoState:
+	printf("%s\n", "GotoState");
 		PRT_DBG_ASSERT(context->postHandlerOperation == GotoState,
 			"goto should only be reachable through ExitState(GotoState)");
 		context->currentState = context->destStateIndex;
 		context->operation = StateEntry;
 		return PRT_TRUE;
 	case HandleTransition:
+		printf("%s\n", "HandleTransition");
 		PRT_DBG_ASSERT(context->postHandlerOperation == HandleTransition,
 			"transition handlers should only be reachable through ExitState(HandleTransition)");
 		context->postHandlerOperation = TakeTransition;
 		return PrtCallTransitionHandler(context);
 	case TakeTransition:
+	printf("%s\n", "TakeTransition");
 		PRT_DBG_ASSERT(context->postHandlerOperation == TakeTransition,
 			"state transitions should only be reachable through HandleTransition");
 		PrtTakeTransition(context, PrtPrimGetEvent(context->currentTrigger));
 		context->operation = StateEntry;
 		return PRT_TRUE;
 	case UnhandledEvent:
+		printf("%s\n", "UnhandledEvent");
 		PRT_DBG_ASSERT(context->postHandlerOperation == UnhandledEvent,
 			"unhandled state popping should only be reachable through ExitState(UnhandledEvent)");
+		// printf("%s\n", "after assert");
 		context->operation = HandleCurrentEvent;
+		// printf("%s\n", "after operation");
 		return !PrtPopState(context, PRT_FALSE);
 	}
 
@@ -1155,7 +1181,7 @@ PrtDequeueEvent(_Inout_ PRT_MACHINEINST_PRIV* context, _Out_ PRT_VALUE** trigger
 			*trigger = e.trigger;
 			*payload = e.payload;
 			RemoveElementFromQueue(context, i);
-			PrtLog(PRT_STEP_DEQUEUE, &e.state, context, e.trigger, e.payload);
+			// PrtLog(PRT_STEP_DEQUEUE, &e.state, context, e.trigger, e.payload);
 			return PRT_TRUE;
 		}
 	}
@@ -1588,7 +1614,7 @@ PrtHaltMachine(
 {
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-	PrtLog(PRT_STEP_HALT, &state, context, NULL, NULL);
+	// PrtLog(PRT_STEP_HALT, &state, context, NULL, NULL);
 	PrtCleanupMachine(context);
 }
 
@@ -1681,7 +1707,7 @@ PrtHandleError(
 	_In_	     PRT_MACHINEINST_PRIV* context
 )
 {
-	((PRT_PROCESS_PRIV *)context->process)->errorHandler(ex, (PRT_MACHINEINST *)context);
+	// ((PRT_PROCESS_PRIV *)context->process)->errorHandler(ex, (PRT_MACHINEINST *)context);
 }
 
 void PRT_CALL_CONV
@@ -1736,8 +1762,8 @@ PrtLog(
 	_In_	     PRT_VALUE* payload
 )
 {
-	((PRT_PROCESS_PRIV *)receiver->process)->logHandler(step, senderState, (PRT_MACHINEINST *)receiver, eventId,
-		payload);
+	// ((PRT_PROCESS_PRIV *)receiver->process)->logHandler(step, senderState, (PRT_MACHINEINST *)receiver, eventId,
+	// 	payload);
 }
 
 void
@@ -1869,10 +1895,8 @@ PrtStartProcess(
 PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtLookupMachineByName(_In_ PRT_STRING name, _Out_ PRT_UINT32* id)
 {
 	*id = 0;
-	printf("hello: %d\n", program->nMachines);
 	for (PRT_UINT32 i = 0; i < program->nMachines; i++)
 	{
-		printf("%d\n", i);
 		if (strcmp(name, program->machines[i]->name) == 0)
 		{
 			*id = i;
@@ -2054,8 +2078,12 @@ PrtMkInterface(
 {
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
 	PRT_VALUE* payload;
-	const PRT_UINT32 interfaceCreated = program->linkMap[context->interfaceBound][IName];
-	const PRT_UINT32 instance_of = program->interfaceDefMap[interfaceCreated];
+
+	// const PRT_UINT32 interfaceCreated = program->linkMap[context->interfaceBound][IName];
+	// const PRT_UINT32 instance_of = program->interfaceDefMap[interfaceCreated];
+
+	const PRT_UINT32 interfaceCreated = IName;
+	const PRT_UINT32 instance_of = program->interfaceDefMap[IName];
 
 	// Check the CreateOk condition
 	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[creator->instanceOf]->creates),
@@ -2088,6 +2116,7 @@ PrtMkInterface(
 		}
 		PrtFree(args);
 	}
+
 	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process,
 		interfaceCreated, instance_of, payload);
 	// must now free this payload because PrtMkMachinePrivate clones it.
@@ -2104,6 +2133,7 @@ PrtMkMachine(
 )
 {
 	PRT_VALUE* payload;
+
 	PRT_UINT32 instanceOf = program->interfaceDefMap[interfaceName];
 
 	if (numArgs == 0)
@@ -2173,6 +2203,7 @@ PrtSend(
 	...
 )
 {
+	printf("%s\n", "beginning of prsend");
 	PRT_VALUE* payload;
 	if (numArgs == 0)
 	{
@@ -2199,7 +2230,9 @@ PrtSend(
 		}
 		PrtFree(args);
 	}
+	printf("%s\n", "before of PrtSendPrivate");
 	PrtSendPrivate(senderState, (PRT_MACHINEINST_PRIV *)receiver, event, payload);
+	printf("%s\n", "after PrtSendPrivate");
 }
 
 void
@@ -2450,6 +2483,9 @@ static void PrtUserPrintValue(_In_ PRT_VALUE* value, _Inout_ char** buffer, _Ino
 		break;
 	case PRT_VALUE_KIND_FLOAT:
 		PrtUserPrintFloat(PrtPrimGetFloat(value), buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_VALUE_KIND_STRING:
+		PrtUserPrintString(PrtPrimGetString(value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALUE_KIND_EVENT:
 		PrtUserPrintString("<", buffer, bufferSize, numCharsWritten);
@@ -2801,4 +2837,32 @@ void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
 	}
 	va_end(argp);
 	PrtFree(args);
+}
+
+PRT_STRING PRT_CALL_CONV PrtFormatString(_In_ PRT_CSTRING baseString, ...)
+{
+	PRT_STRING ret = PrtMalloc(sizeof(PRT_CHAR) * (strlen(baseString) + 1));
+	strcpy(ret, baseString);
+	va_list argp;
+	va_start(argp, baseString);
+	PRT_UINT32 numArgs = va_arg(argp, PRT_UINT32);
+	PRT_VALUE** args = (PRT_VALUE **)PrtCalloc(numArgs, sizeof(PRT_VALUE *));
+	for (PRT_UINT32 i = 0; i < numArgs; i++)
+	{
+		args[i] = va_arg(argp, PRT_VALUE *);
+	}
+	PRT_UINT32 numSegs = va_arg(argp, PRT_UINT32);
+	for (PRT_UINT32 i = 0; i < numSegs; i++)
+	{
+		PRT_UINT32 argIndex = va_arg(argp, PRT_UINT32);
+		PRT_STRING arg = PrtToStringValue(args[argIndex]);
+		PRT_CSTRING seg = va_arg(argp, PRT_CSTRING);
+		ret = PrtRealloc(ret, sizeof(PRT_CHAR) * (strlen(ret) + 1 + strlen(arg) + strlen(seg)));
+		strcat(ret, arg);
+		strcat(ret, seg);
+		PrtFree(arg);
+	}
+	va_end(argp);
+	PrtFree(args);
+	return ret;
 }

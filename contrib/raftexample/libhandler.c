@@ -1663,6 +1663,7 @@ static __noinline lh_value handle_with(
         #endif
         res = action(arg);
         assert(hs == &__hstack);
+        printf("2\n");
         h = (effecthandler*)hstack_top(hs);  // re-load our handler since the handler stack could have been reallocated
         #ifndef NDEBUG
         assert(id == h->id);
