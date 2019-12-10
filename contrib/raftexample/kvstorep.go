@@ -50,7 +50,7 @@ func (s *kvstorep) Propose(k string, v string) {
 
 func (s *kvstorep) readCommits() {
 	for {
-		log.Print("hello")
+		continue
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"fmt"
 
 	"go.etcd.io/etcd/raft/raftpb"
 )
@@ -28,15 +29,20 @@ import (
 var wg = &sync.WaitGroup{}
 
 func main() {
-	clusterManager := C.makeMainMachine()
 	cluster := flag.String("cluster", "http://127.0.0.1:9021", "comma separated cluster peers")
 	isetcd := flag.Bool("isetcd", true, "Run with etcd implementation")
 	flag.Parse()
+	var clusterManager *C.PRT_MACHINEINST
+	if !(*isetcd) {
+		clusterManager = C.makeMainMachine()
+	}
 	cluster_list := strings.Split(*cluster, ",")
 	for i := 0; i < len(cluster_list); i++ {
 		kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
 		kvport = kvport + 1
-		go C.sendAddMachineEvent(clusterManager)
+		if !(*isetcd) {
+			C.sendAddMachineEvent(clusterManager)
+		}
 		wg.Add(1)
 		go makeKvStore(cluster_list, i+1, kvport, false, *isetcd)
 	}
@@ -67,6 +73,7 @@ func makeKvStore(cluster []string, id int, port int, join bool, etcd bool) {
 		// the key-value http handler will propose updates to raft
 		serveHttpKVAPI(kvs, port, confChangeC, errorC)
 	} else {
+		fmt.Printf("running without etcd")
 		confChangeC := make(chan raftpb.ConfChange)
 		defer close(confChangeC)
 
