@@ -822,6 +822,7 @@ PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
+	printf("machineId: %s, state: %s\n", state.machineName, state.stateName);
 	// PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);

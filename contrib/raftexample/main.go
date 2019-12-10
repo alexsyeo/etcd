@@ -16,26 +16,30 @@ package main
 
 //#include "utils.h"
 import "C"
-import "flag"
-import "strings"
-import "go.etcd.io/etcd/raft/raftpb"
-import "strconv"
-import "log"
-import "sync"
+import (
+	"flag"
+	"strconv"
+	"strings"
+	"sync"
+
+	"go.etcd.io/etcd/raft/raftpb"
+)
 
 var wg = &sync.WaitGroup{}
 
 func main() {
 	clusterManager := C.makeMainMachine()
 	cluster := flag.String("cluster", "http://127.0.0.1:9021", "comma separated cluster peers")
+	isetcd := flag.Bool("isetcd", true, "Run with etcd implementation")
 	flag.Parse()
 	cluster_list := strings.Split(*cluster, ",")
 	for i := 0; i < len(cluster_list); i++ {
 		kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
 		kvport = kvport + 1
-		C.sendAddMachineEvent(clusterManager)
 		wg.Add(1)
-		go makeKvStore(cluster_list, i+1, kvport, false)
+		go C.sendAddMachineEvent(clusterManager)
+		wg.Add(1)
+		go makeKvStore(cluster_list, i+1, kvport, false, isetcd)
 	}
 	wg.Wait()
 }
@@ -45,9 +49,8 @@ int id: node ID
 int port: key-value server port
 bool join: join an existing cluster
 */
-func makeKvStore(cluster []string, id int, port int, join bool) {
+func makeKvStore(cluster []string, id int, port int, join bool, etcd bool) {
 	defer wg.Done()
-		log.Printf("hi")
 	proposeC := make(chan string)
 	defer close(proposeC)
 	confChangeC := make(chan raftpb.ConfChange)
@@ -59,8 +62,6 @@ func makeKvStore(cluster []string, id int, port int, join bool) {
 	commitC, errorC, snapshotterReady := newRaftNode(id, cluster, join, getSnapshot, proposeC, confChangeC)
 
 	kvs = newKVStore(<-snapshotterReady, proposeC, commitC, errorC)
-
-
 
 	// the key-value http handler will propose updates to raft
 	serveHttpKVAPI(kvs, port, confChangeC, errorC)
