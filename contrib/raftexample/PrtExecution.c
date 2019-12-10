@@ -826,7 +826,6 @@ PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* entryFun = currentState->entryFun;
-	printf("incallentryhandler\n\n");
 
 	return PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
 }
@@ -913,7 +912,6 @@ PrtDequeueOrReceive(_Inout_ PRT_MACHINEINST_PRIV* context, PRT_VALUE* trigger, P
 		context->operation = HandleCurrentEvent;
 		return PRT_TRUE;
 	}
-
 	PrtResume(context, PrtPrimGetEvent(trigger), payload);
 	PrtFreeValue(trigger);
 	return PrtHandleUserReturn(context);
@@ -931,11 +929,11 @@ PrtStepStateMachine(
 	switch (context->operation)
 	{
 	case StateEntry:
-		printf("%s\n", "StateEntry");
+		//printf("%s\n", "StateEntry");
 		context->postHandlerOperation = DequeueOrReceive;
 		return PrtCallEntryHandler(context);
 	case DequeueOrReceive:
-		printf("%s\n", "DequeueOrReceive");
+		//printf("%s\n", "DequeueOrReceive");
 		PrtLockMutex(context->stateMachineLock);
 		// If the machine is blocked on a receive statement, then
 		// PrtDequeueEvent is guaranteed to return an event meant
@@ -949,42 +947,42 @@ PrtStepStateMachine(
 		// blocked event handler
 		return did_dequeue && PrtDequeueOrReceive(context, trigger, payload);
 	case HandleCurrentEvent:
-		printf("%s\n", "HandleCurrentEvent");
+		//printf("%s\n", "HandleCurrentEvent");
 		// Either a raise or a normal dequeue; offload to complex function
 		context->postHandlerOperation = DequeueOrReceive;
 		return PrtHandleEvent(context);
 	case ExitState:
-	printf("%s\n", "ExitState");
+	//printf("%s\n", "ExitState");
 		return PrtCallExitHandler(context);
 	case PopState:
-	printf("%s\n", "PopState");
+	//printf("%s\n", "PopState");
 		PRT_DBG_ASSERT(context->postHandlerOperation == PopState,
 			"pop should only be reachable through ExitState(PopState)");
 		context->operation = DequeueOrReceive;
 		context->postHandlerOperation = DequeueOrReceive;
 		return !PrtPopState(context, PRT_TRUE);
 	case GotoState:
-	printf("%s\n", "GotoState");
+	//printf("%s\n", "GotoState");
 		PRT_DBG_ASSERT(context->postHandlerOperation == GotoState,
 			"goto should only be reachable through ExitState(GotoState)");
 		context->currentState = context->destStateIndex;
 		context->operation = StateEntry;
 		return PRT_TRUE;
 	case HandleTransition:
-		printf("%s\n", "HandleTransition");
+		//printf("%s\n", "HandleTransition");
 		PRT_DBG_ASSERT(context->postHandlerOperation == HandleTransition,
 			"transition handlers should only be reachable through ExitState(HandleTransition)");
 		context->postHandlerOperation = TakeTransition;
 		return PrtCallTransitionHandler(context);
 	case TakeTransition:
-	printf("%s\n", "TakeTransition");
+	//printf("%s\n", "TakeTransition");
 		PRT_DBG_ASSERT(context->postHandlerOperation == TakeTransition,
 			"state transitions should only be reachable through HandleTransition");
 		PrtTakeTransition(context, PrtPrimGetEvent(context->currentTrigger));
 		context->operation = StateEntry;
 		return PRT_TRUE;
 	case UnhandledEvent:
-		printf("%s\n", "UnhandledEvent");
+		//printf("%s\n", "UnhandledEvent");
 		PRT_DBG_ASSERT(context->postHandlerOperation == UnhandledEvent,
 			"unhandled state popping should only be reachable through ExitState(UnhandledEvent)");
 		// printf("%s\n", "after assert");
@@ -1732,7 +1730,7 @@ void PRT_CALL_CONV
 PrtPrintfDefaultFn(_In_opt_z_ PRT_CSTRING message)
 {
 	// do not allow % signs in message to be interpreted as arguments.
-	printf_s("%s", message);
+	//printf_s("%s", message);
 }
 
 PRT_API void PRT_CALL_CONV
