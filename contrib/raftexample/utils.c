@@ -43,16 +43,13 @@ PRT_MACHINEINST* makeMainMachine(){
 		printf("%s\n", "FAILED TO FIND TestMachine");
 		exit(1);
 	}
-    printf("\n\n\n\n\n\n\n\n\n\n\nhello\n");
 	PRT_MACHINEINST* clusterManager = PrtMkMachine(ContainerProcess, 0, 0);
-    printf("\n\n\n\n\n\n\n\n\nhello2\n");
     return clusterManager;
 
 	// PrtFreeValue(payload);
 }
 
 void sendAddMachineEvent(PRT_MACHINEINST* clusterMan) {
-    printf("\n\n\n\n\n\n\nclusterman %d\n", clusterMan->instanceOf);
     PRT_MACHINESTATE state;
     PrtGetMachineState(clusterMan, &state);
     PRT_UINT32 machineId;
@@ -63,7 +60,6 @@ void sendAddMachineEvent(PRT_MACHINEINST* clusterMan) {
 		exit(1);
 	}
     PRT_MACHINEINST* server = PrtMkMachine(ContainerProcess, 1, 0);
-    printf("server %d\n", machineId);
     PRT_VALUE* PTMP_tmp13_1 = NULL;
     PRT_VALUE** P_LVALUE_76 = &(PTMP_tmp13_1);
     PrtFreeValue(*P_LVALUE_76);
@@ -75,53 +71,5 @@ void sendAddMachineEvent(PRT_MACHINEINST* clusterMan) {
     *P_LVALUE_137 = PrtCloneValue((&P_EVENT_AddServer.value));
 
     PrtSend(&state, clusterMan, PTMP_tmp1_15, 1, &(PTMP_tmp13_1));
-
-    PRT_MACHINESTATE state2;
-    PrtGetMachineState(clusterMan, &state2);
-    PRT_UINT32 machineId2;
-	PRT_BOOLEAN foundMainMachine2 = PrtLookupMachineByName("Server", &machineId2);
-    if (foundMainMachine2 == PRT_FALSE)
-	{
-		printf("%s\n", "FAILED TO FIND TestMachine");
-		exit(1);
-	}
-    PRT_MACHINEINST* server2 = PrtMkMachine(ContainerProcess, 1, 0);
-    printf("server %d\n", machineId2);
-    PRT_VALUE* PTMP_tmp14_1 = NULL;
-    PRT_VALUE** P_LVALUE_75 = &(PTMP_tmp14_1);
-    PrtFreeValue(*P_LVALUE_75);
-    *P_LVALUE_75 = PrtCloneValue((server2->id));
-
-    PRT_VALUE* PTMP_tmp1_16 = NULL;
-    PRT_VALUE** P_LVALUE_138 = &(PTMP_tmp1_16);
-    PrtFreeValue(*P_LVALUE_138);
-    *P_LVALUE_138 = PrtCloneValue((&P_EVENT_AddServer.value));
-
-    PrtSend(&state2, clusterMan, PTMP_tmp1_16, 1, &(PTMP_tmp14_1));
-
-
-    PRT_MACHINESTATE state3;
-    PrtGetMachineState(clusterMan, &state3);
-    PRT_UINT32 machineId3;
-	PRT_BOOLEAN foundMainMachine3 = PrtLookupMachineByName("Server", &machineId3);
-    if (foundMainMachine3 == PRT_FALSE)
-	{
-		printf("%s\n", "FAILED TO FIND TestMachine");
-		exit(1);
-	}
-    PRT_MACHINEINST* server3 = PrtMkMachine(ContainerProcess, 1, 0);
-    printf("server %d\n", machineId3);
-    PRT_VALUE* PTMP_tmp15_1 = NULL;
-    PRT_VALUE** P_LVALUE_77 = &(PTMP_tmp15_1);
-    PrtFreeValue(*P_LVALUE_77);
-    *P_LVALUE_77 = PrtCloneValue((server3->id));
-
-    PRT_VALUE* PTMP_tmp1_17 = NULL;
-    PRT_VALUE** P_LVALUE_139 = &(PTMP_tmp1_17);
-    PrtFreeValue(*P_LVALUE_139);
-    *P_LVALUE_139 = PrtCloneValue((&P_EVENT_AddServer.value));
-    
-    
-    PrtSend(&state3, clusterMan, PTMP_tmp1_17, 1, &(PTMP_tmp15_1));
     printf("kdlfjlk\n");
 }

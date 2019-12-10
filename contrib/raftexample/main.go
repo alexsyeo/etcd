@@ -39,7 +39,7 @@ func main() {
 		wg.Add(1)
 		go C.sendAddMachineEvent(clusterManager)
 		wg.Add(1)
-		go makeKvStore(cluster_list, i+1, kvport, false, isetcd)
+		go makeKvStore(cluster_list, i+1, kvport, false, *isetcd)
 	}
 	wg.Wait()
 }
