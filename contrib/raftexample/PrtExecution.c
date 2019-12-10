@@ -145,7 +145,6 @@ PrtMkMachinePrivate(
 	_In_	         PRT_VALUE* payload
 )
 {
-
 	PrtLockMutex(process->processLock);
 
 	PRT_UINT32 i;
@@ -610,8 +609,6 @@ lh_value receive_handler_action(lh_value rargsv)
 void* prt_receive_handler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN action, PRT_VALUE*** args)
 {
 	receive_handler_args_t rargs = { (PRT_MACHINEINST*)context, args, action };
-	lh_handle(&_prt_handler_def, lh_value_ptr(context), &receive_handler_action, lh_value_any_ptr(&
-		rargs));
 	return lh_ptr_value(lh_handle(&_prt_handler_def, lh_value_ptr(context), &receive_handler_action, lh_value_any_ptr(&
 		rargs)));
 }
@@ -829,6 +826,7 @@ PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* entryFun = currentState->entryFun;
+	printf("incallentryhandler\n\n");
 
 	return PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
 }
@@ -2116,6 +2114,7 @@ PrtMkInterface(
 		}
 		PrtFree(args);
 	}
+	printf("make interface !!! %d\n", instance_of);
 
 	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process,
 		interfaceCreated, instance_of, payload);
@@ -2135,6 +2134,7 @@ PrtMkMachine(
 	PRT_VALUE* payload;
 
 	PRT_UINT32 instanceOf = program->interfaceDefMap[interfaceName];
+	printf("instanceof %d", instanceOf);
 
 	if (numArgs == 0)
 	{

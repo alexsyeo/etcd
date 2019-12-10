@@ -27,10 +27,10 @@ import (
 
 // a key-value store backed by raft
 type kvstore struct {
-	proposeC    chan<- string // channel for proposing updates
-	mu          sync.RWMutex
-	kvStore     map[string]string // current committed key-value pairs
-	snapshotter *snap.Snapshotter
+	proposeC     chan<- string // channel for proposing updates
+	mu           sync.RWMutex
+	kvStore      map[string]string // current committed key-value pairs
+	snapshotter  *snap.Snapshotter
 	proposedVals map[string]time.Time
 }
 
@@ -91,10 +91,10 @@ func (s *kvstore) readCommits(commitC <-chan *string, errorC <-chan error) {
 		}
 		s.mu.Lock()
 		s.kvStore[dataKv.Key] = dataKv.Val
-		_, ok := s.proposedVals[dataKv.Key + dataKv.Val]
+		_, ok := s.proposedVals[dataKv.Key+dataKv.Val]
 		if ok {
-			snap.PutLatency.Observe(time.Since(s.proposedVals[dataKv.Key + dataKv.Val]).Seconds())
-			delete(s.proposedVals, dataKv.Key + dataKv.Val)
+			snap.PutLatency.Observe(time.Since(s.proposedVals[dataKv.Key+dataKv.Val]).Seconds())
+			delete(s.proposedVals, dataKv.Key+dataKv.Val)
 		}
 		s.mu.Unlock()
 	}

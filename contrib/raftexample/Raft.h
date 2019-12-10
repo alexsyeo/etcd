@@ -3,9 +3,6 @@
 #define P_RAFT_H_
 #include "Prt.h"
 
-PRT_MACHINEINST* makeMainMachine();
-void sendAddMachineEvent(PRT_MACHINEINST* clusterMan);
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,16 +39,21 @@ extern "C" {
     extern PRT_EVENTDECL P_EVENT_M_LogAppend;
     extern PRT_EVENTDECL P_EVENT_M_NotifyLeaderElected;
     extern PRT_EVENTDECL P_EVENT_M_LeaderCommitted;
-    extern PRT_INTERFACEDECL P_I_Client;
+    extern PRT_EVENTDECL P_EVENT_InjectFailure;
     extern PRT_INTERFACEDECL P_I_ClusterManager;
     extern PRT_INTERFACEDECL P_I_Server;
     extern PRT_INTERFACEDECL P_I_TestDriver0;
+    extern PRT_INTERFACEDECL P_I_TestDriver1;
+    extern PRT_INTERFACEDECL P_I_FailureInjector;
+    extern PRT_INTERFACEDECL P_I_TestDriver2;
     extern PRT_INTERFACEDECL P_I_WallclockTimer;
-    extern PRT_MACHINEDECL P_MACHINE_Client;
     extern PRT_MACHINEDECL P_MACHINE_ClusterManager;
     extern PRT_MACHINEDECL P_MACHINE_SafetyMonitor;
     extern PRT_MACHINEDECL P_MACHINE_Server;
     extern PRT_MACHINEDECL P_MACHINE_TestDriver0;
+    extern PRT_MACHINEDECL P_MACHINE_TestDriver1;
+    extern PRT_MACHINEDECL P_MACHINE_FailureInjector;
+    extern PRT_MACHINEDECL P_MACHINE_TestDriver2;
     extern PRT_MACHINEDECL P_MACHINE_WallclockTimer;
     extern PRT_TYPE* P_TYPEDEF_Log;
     extern PRT_TYPE* P_TYPEDEF_Idxs;
@@ -59,6 +61,8 @@ extern "C" {
     extern PRT_TYPE* P_TYPEDEF_Idxs3;
     extern PRT_TYPE* P_TYPEDEF_Config;
     // DECL(SafetyTest, Test0) => P_SAFETY_TEST_Test0
+    // DECL(SafetyTest, Test1) => P_SAFETY_TEST_Test1
+    // DECL(SafetyTest, Test2) => P_SAFETY_TEST_Test2
     
 #ifdef __cplusplus
 }
