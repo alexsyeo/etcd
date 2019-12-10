@@ -26,7 +26,7 @@ import (
 )
 
 // a key-value store backed by raft
-type kvstore struct {
+type kvstoreetcd struct {
 	proposeC     chan<- string // channel for proposing updates
 	mu           sync.RWMutex
 	kvStore      map[string]string // current committed key-value pairs
@@ -39,8 +39,8 @@ type kv struct {
 	Val string
 }
 
-func newKVStore(snapshotter *snap.Snapshotter, proposeC chan<- string, commitC <-chan *string, errorC <-chan error) *kvstore {
-	s := &kvstore{proposeC: proposeC, kvStore: make(map[string]string), proposedVals: make(map[string]time.Time), snapshotter: snapshotter}
+func newKVStore(snapshotter *snap.Snapshotter, proposeC chan<- string, commitC <-chan *string, errorC <-chan error) *kvstoreetcd {
+	s := &kvstoreetcd{proposeC: proposeC, kvStore: make(map[string]string), proposedVals: make(map[string]time.Time), snapshotter: snapshotter}
 	// replay log into key-value map
 	s.readCommits(commitC, errorC)
 	// read commits from raft into kvStore map until error
@@ -48,14 +48,14 @@ func newKVStore(snapshotter *snap.Snapshotter, proposeC chan<- string, commitC <
 	return s
 }
 
-func (s *kvstore) Lookup(key string) (string, bool) {
+func (s *kvstoreetcd) Lookup(key string) (string, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	v, ok := s.kvStore[key]
 	return v, ok
 }
 
-func (s *kvstore) Propose(k string, v string) {
+func (s *kvstoreetcd) Propose(k string, v string) {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(kv{k, v}); err != nil {
 		log.Fatal(err)
@@ -65,7 +65,7 @@ func (s *kvstore) Propose(k string, v string) {
 	s.proposeC <- buf.String()
 }
 
-func (s *kvstore) readCommits(commitC <-chan *string, errorC <-chan error) {
+func (s *kvstoreetcd) readCommits(commitC <-chan *string, errorC <-chan error) {
 	for data := range commitC {
 		if data == nil {
 			// done replaying log; new data incoming
@@ -103,13 +103,13 @@ func (s *kvstore) readCommits(commitC <-chan *string, errorC <-chan error) {
 	}
 }
 
-func (s *kvstore) getSnapshot() ([]byte, error) {
+func (s *kvstoreetcd) getSnapshot() ([]byte, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return json.Marshal(s.kvStore)
 }
 
-func (s *kvstore) recoverFromSnapshot(snapshot []byte) error {
+func (s *kvstoreetcd) recoverFromSnapshot(snapshot []byte) error {
 	var store map[string]string
 	if err := json.Unmarshal(snapshot, &store); err != nil {
 		return err

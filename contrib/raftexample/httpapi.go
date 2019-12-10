@@ -20,20 +20,24 @@ import (
 	"net/http"
 	"strconv"
 
-	"go.etcd.io/etcd/raft/raftpb"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.etcd.io/etcd/raft/raftpb"
 )
 
 // Handler for a http based key-value store backed by raft
 type httpKVAPI struct {
-	store       *kvstore
+	store       *kvstoreetcd
 	confChangeC chan<- raftpb.ConfChange
+}
+
+type httpPKVAPI struct {
+	store *kvstorep
 }
 
 func (h *httpKVAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	key := r.RequestURI
 	defer r.Body.Close()
-	if (key == "/metrics") {
+	if key == "/metrics" {
 		promhttp.Handler().ServeHTTP(w, r)
 	} else {
 		switch {
@@ -106,8 +110,42 @@ func (h *httpKVAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *httpPKVAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	key := r.RequestURI
+	defer r.Body.Close()
+	if key == "/metrics" {
+		promhttp.Handler().ServeHTTP(w, r)
+	} else {
+		switch {
+		case r.Method == "PUT":
+			v, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				log.Printf("Failed to read on PUT (%v)\n", err)
+				http.Error(w, "Failed on PUT", http.StatusBadRequest)
+				return
+			}
+
+			h.store.Propose(key, string(v))
+
+			// Optimistic-- no waiting for ack from raft. Value is not yet
+			// committed so a subsequent GET on the key may return old value
+			w.WriteHeader(http.StatusNoContent)
+		case r.Method == "GET":
+			if v, ok := h.store.Lookup(key); ok {
+				w.Write([]byte(v))
+			} else {
+				http.Error(w, "Failed to GET", http.StatusNotFound)
+			}
+		default:
+			w.Header().Set("Allow", "PUT")
+			w.Header().Add("Allow", "GET")
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}
+}
+
 // serveHttpKVAPI starts a key-value server with a GET/PUT API and listens.
-func serveHttpKVAPI(kv *kvstore, port int, confChangeC chan<- raftpb.ConfChange, errorC <-chan error) {
+func serveHttpKVAPI(kv *kvstoreetcd, port int, confChangeC chan<- raftpb.ConfChange, errorC <-chan error) {
 	srv := http.Server{
 		Addr: ":" + strconv.Itoa(port),
 		Handler: &httpKVAPI{
@@ -125,4 +163,18 @@ func serveHttpKVAPI(kv *kvstore, port int, confChangeC chan<- raftpb.ConfChange,
 	if err, ok := <-errorC; ok {
 		log.Fatal(err)
 	}
+}
+
+func serveHttpPKVAPI(kv *kvstorep, port int) {
+	srv := http.Server{
+		Addr: ":" + strconv.Itoa(port),
+		Handler: &httpPKVAPI{
+			store: kv,
+		},
+	}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 }

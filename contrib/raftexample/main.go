@@ -36,7 +36,6 @@ func main() {
 	for i := 0; i < len(cluster_list); i++ {
 		kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
 		kvport = kvport + 1
-		wg.Add(1)
 		go C.sendAddMachineEvent(clusterManager)
 		wg.Add(1)
 		go makeKvStore(cluster_list, i+1, kvport, false, *isetcd)
@@ -51,18 +50,31 @@ bool join: join an existing cluster
 */
 func makeKvStore(cluster []string, id int, port int, join bool, etcd bool) {
 	defer wg.Done()
-	proposeC := make(chan string)
-	defer close(proposeC)
-	confChangeC := make(chan raftpb.ConfChange)
-	defer close(confChangeC)
 
-	// raft provides a commit stream for the proposals from the http api
-	var kvs *kvstore
-	getSnapshot := func() ([]byte, error) { return kvs.getSnapshot() }
-	commitC, errorC, snapshotterReady := newRaftNode(id, cluster, join, getSnapshot, proposeC, confChangeC)
+	if etcd {
+		proposeC := make(chan string)
+		defer close(proposeC)
+		confChangeC := make(chan raftpb.ConfChange)
+		defer close(confChangeC)
 
-	kvs = newKVStore(<-snapshotterReady, proposeC, commitC, errorC)
+		// raft provides a commit stream for the proposals from the http api
+		var kvs *kvstoreetcd
+		getSnapshot := func() ([]byte, error) { return kvs.getSnapshot() }
+		commitC, errorC, snapshotterReady := newRaftNode(id, cluster, join, getSnapshot, proposeC, confChangeC)
 
-	// the key-value http handler will propose updates to raft
-	serveHttpKVAPI(kvs, port, confChangeC, errorC)
+		kvs = newKVStore(<-snapshotterReady, proposeC, commitC, errorC)
+
+		// the key-value http handler will propose updates to raft
+		serveHttpKVAPI(kvs, port, confChangeC, errorC)
+	} else {
+		confChangeC := make(chan raftpb.ConfChange)
+		defer close(confChangeC)
+
+		var kvs *kvstorep
+		kvs = newPKVStore()
+
+		serveHttpPKVAPI(kvs, port)
+
+	}
+
 }
