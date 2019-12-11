@@ -69,3 +69,56 @@ void sendAddMachineEvent(PRT_MACHINEINST* clusterMan, int numServers) {
         printf("kdlfjlk\n");
     }
 }
+
+void sendClientRequest(char key[], char val[]) {
+    sendClientRequest1(clusterManager, key, val);
+}
+
+// Causes clusterManager to send request to itself, simulating a client request
+// Pass in clusterManager
+void sendClientRequest1(PRT_MACHINEINST* context, char key[], char val[]) {
+    printf("Key: %s\n", key);
+    printf("Val: %s\n", val);
+
+
+    PRT_MACHINEINST_PRIV* p_this = (PRT_MACHINEINST_PRIV*)context;
+    PRT_VALUE* PTMP_tmp0_74 = NULL;
+    PRT_VALUE* PTMP_tmp1_62 = NULL;
+    PRT_VALUE* PTMP_tmp2_55 = NULL;
+    PRT_VALUE* PTMP_tmp3_51 = NULL;
+    PRT_VALUE* PTMP_tmp4_43 = NULL;
+    PRT_VALUE* PTMP_tmp5_32 = NULL;
+    
+    PRT_VALUE _P_GEN_null = { PRT_VALUE_KIND_NULL, { .ev = PRT_SPECIAL_EVENT_NULL } };
+    PRT_VALUE P_LIT_STRING = { PRT_VALUE_KIND_STRING, { .str = key } };
+    PRT_VALUE P_LIT_STRING_1 = { PRT_VALUE_KIND_STRING, { .str = val } };
+
+    PRT_VALUE** P_LVALUE_1290 = &(PTMP_tmp1_62);
+    PrtFreeValue(*P_LVALUE_1290);
+    *P_LVALUE_1290 = PrtCloneValue((&P_EVENT_Request.value));
+    
+    PRT_VALUE** P_LVALUE_1291 = &(PTMP_tmp2_55);
+    PrtFreeValue(*P_LVALUE_1291);
+    *P_LVALUE_1291 = PrtCloneValue((p_this->id));
+    
+    PRT_VALUE** P_LVALUE_1292 = &(PTMP_tmp3_51);
+    PrtFreeValue(*P_LVALUE_1292);
+    *P_LVALUE_1292 = PrtCloneValue((&P_LIT_STRING));
+
+    PRT_VALUE** P_LVALUE_1293 = &(PTMP_tmp4_43);
+    PrtFreeValue(*P_LVALUE_1293);
+    *P_LVALUE_1293 = PrtCloneValue((&P_LIT_STRING_1));
+    
+    PRT_VALUE** P_LVALUE_1294 = &(PTMP_tmp5_32);
+    PrtFreeValue(*P_LVALUE_1294);
+
+    // generated type of tuple may change later!
+    *P_LVALUE_1294 = (PrtMkTuple(&P_GEND_TYPE_T3Rrr, &(PTMP_tmp2_55), &(PTMP_tmp3_51), &(PTMP_tmp4_43)));
+    
+    PRT_MACHINESTATE* state;
+    PrtGetMachineState(context, state);
+
+    printf("before PRTSEND\n");
+    PrtSend(state, context, PTMP_tmp1_62, 1, &(PTMP_tmp5_32));
+    printf("after PRTSEND\n");
+}
