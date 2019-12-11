@@ -13,8 +13,7 @@
 // limitations under the License.
 
 package main
-//#include "utils.h"
-import "C"
+
 import (
 	"bytes"
 	"encoding/gob"
@@ -61,10 +60,9 @@ func (s *kvstoreetcd) Propose(k string, v string) {
 	if err := gob.NewEncoder(&buf).Encode(kv{k, v}); err != nil {
 		log.Fatal(err)
 	}
-	// snap.NumPropose.Inc()
-	// s.proposedVals[k+v] = time.Now()
-	// s.proposeC <- buf.String()
-	C.sendClientRequest(C.CString(k), C.CString(v))
+	snap.NumPropose.Inc()
+	s.proposedVals[k+v] = time.Now()
+	s.proposeC <- buf.String()
 }
 
 func (s *kvstoreetcd) readCommits(commitC <-chan *string, errorC <-chan error) {

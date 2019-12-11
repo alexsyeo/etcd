@@ -14,9 +14,10 @@
 
 package main
 
+//#include "utils.h"
+import "C"
 import (
 	"encoding/json"
-	"log"
 	"sync"
 	"time"
 )
@@ -45,7 +46,7 @@ func (s *kvstorep) Lookup(key string) (string, bool) {
 }
 
 func (s *kvstorep) Propose(k string, v string) {
-	log.Printf("proposed - key: %s, value: %s", k, v)
+	C.sendClientRequest(C.CString(k), C.CString(v))
 }
 
 func (s *kvstorep) readCommits() {

@@ -19,9 +19,9 @@ import "C"
 import (
 	"flag"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
-	"strconv"
 
 	"go.etcd.io/etcd/raft/raftpb"
 )
@@ -35,17 +35,17 @@ func main() {
 
 	cluster_list := strings.Split(*cluster, ",")
 	numServers := len(cluster_list)
-	for i := 0; i < numServers; i++ {
-	  kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
-	  kvport = kvport + 1
-	  wg.Add(1)
-	  go makeKvStore(cluster_list, i+1, kvport, false, *isetcd)
-	}
 	if !(*isetcd) {
-		go func (){
-			clusterManager := C.makeMainMachine()
-			C.sendAddMachineEvent(clusterManager, C.int(numServers))
-		}()
+		clusterManager := C.makeMainMachine()
+		for i := 0; i < numServers; i++ {
+			go C.sendAddMachineEvent(clusterManager, C.int(1))
+		}
+	}
+	for i := 0; i < numServers; i++ {
+		kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
+		kvport = kvport + 1
+		wg.Add(1)
+		go makeKvStore(cluster_list, i+1, kvport, false, *isetcd)
 	}
 	wg.Wait()
 }

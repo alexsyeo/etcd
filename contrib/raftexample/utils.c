@@ -1,5 +1,6 @@
 #include "utils.h"
 PRT_PROCESS* ContainerProcess;
+PRT_MACHINEINST* clusterManager;
 
 PRT_EVENTDECL* P_ALL_EVENTS[] = { &_P_EVENT_NULL_STRUCT, &_P_EVENT_HALT_STRUCT, &P_EVENT_NotifyLeaderUpdate, &P_EVENT_RedirectRequest, &P_EVENT_ShutDown, &P_EVENT_MakeUnavailable, &P_EVENT_LocalEvent, &P_EVENT_CConfigureEvent, &P_EVENT_Response, &P_EVENT_SConfigureEvent, &P_EVENT_VoteRequest, &P_EVENT_VoteResponse, &P_EVENT_AppendEntriesRequest, &P_EVENT_AppendEntriesResponse, &P_EVENT_BecomeFollower, &P_EVENT_BecomeCandidate, &P_EVENT_BecomeLeader, &P_EVENT_ConfigureWallclock, &P_EVENT_TickEvent, &P_EVENT_CancelTimer, &P_EVENT_StartTimer, &P_EVENT_SentAllTicks, &P_EVENT_CheckLogsOnShutDown, &P_EVENT_UpdateServers, &P_EVENT_UpdateServersResponse, &P_EVENT_AddServerResponse, &P_EVENT_RemoveServerResponse, &P_EVENT_EMonitorInit, &P_EVENT_Request, &P_EVENT_AddServer, &P_EVENT_RemoveServer, &P_EVENT_M_LogAppend, &P_EVENT_M_NotifyLeaderElected, &P_EVENT_M_LeaderCommitted, &P_EVENT_InjectFailure };
 PRT_MACHINEDECL* P_ALL_MACHINES[] = { &P_MACHINE_ClusterManager, &P_MACHINE_SafetyMonitor, &P_MACHINE_Server, &P_MACHINE_TestDriver0, &P_MACHINE_TestDriver1, &P_MACHINE_FailureInjector, &P_MACHINE_TestDriver2, &P_MACHINE_WallclockTimer };
@@ -43,7 +44,7 @@ PRT_MACHINEINST* makeMainMachine(){
 		printf("%s\n", "FAILED TO FIND TestMachine");
 		exit(1);
 	}
-	PRT_MACHINEINST* clusterManager = PrtMkMachine(ContainerProcess, 0, 0);
+    clusterManager = PrtMkMachine(ContainerProcess, 0, 0);
     return clusterManager;
 
 	// PrtFreeValue(payload);
@@ -113,7 +114,7 @@ void sendClientRequest1(PRT_MACHINEINST* context, char key[], char val[]) {
     PrtFreeValue(*P_LVALUE_1294);
 
     // generated type of tuple may change later!
-    *P_LVALUE_1294 = (PrtMkTuple(&P_GEND_TYPE_T3Rrr, &(PTMP_tmp2_55), &(PTMP_tmp3_51), &(PTMP_tmp4_43)));
+    *P_LVALUE_1294 = (PrtMkTuple(P_TYPEDEF_Log, &(PTMP_tmp2_55), &(PTMP_tmp3_51), &(PTMP_tmp4_43)));
     
     PRT_MACHINESTATE* state;
     PrtGetMachineState(context, state);
