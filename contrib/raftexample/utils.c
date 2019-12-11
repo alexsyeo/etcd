@@ -49,27 +49,23 @@ PRT_MACHINEINST* makeMainMachine(){
 	// PrtFreeValue(payload);
 }
 
-void sendAddMachineEvent(PRT_MACHINEINST* clusterMan) {
+void sendAddMachineEvent(PRT_MACHINEINST* clusterMan, int numServers) {
     PRT_MACHINESTATE state;
     PrtGetMachineState(clusterMan, &state);
-    PRT_UINT32 machineId;
-	PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("Server", &machineId);
-    if (foundMainMachine == PRT_FALSE)
-	{
-		printf("%s\n", "FAILED TO FIND TestMachine");
-		exit(1);
-	}
-    PRT_MACHINEINST* server = PrtMkMachine(ContainerProcess, 1, 0);
-    PRT_VALUE* PTMP_tmp13_1 = NULL;
-    PRT_VALUE** P_LVALUE_76 = &(PTMP_tmp13_1);
-    PrtFreeValue(*P_LVALUE_76);
-    *P_LVALUE_76 = PrtCloneValue((server->id));
+    int i;
+    for (i = 0; i < numServers; i++) {
+        PRT_MACHINEINST* server = PrtMkMachine(ContainerProcess, 1, 0);
+        PRT_VALUE* PTMP_tmp13_1 = NULL;
+        PRT_VALUE** P_LVALUE_76 = &(PTMP_tmp13_1);
+        PrtFreeValue(*P_LVALUE_76);
+        *P_LVALUE_76 = PrtCloneValue((server->id));
 
-    PRT_VALUE* PTMP_tmp1_15 = NULL;
-    PRT_VALUE** P_LVALUE_137 = &(PTMP_tmp1_15);
-    PrtFreeValue(*P_LVALUE_137);
-    *P_LVALUE_137 = PrtCloneValue((&P_EVENT_AddServer.value));
+        PRT_VALUE* PTMP_tmp1_15 = NULL;
+        PRT_VALUE** P_LVALUE_137 = &(PTMP_tmp1_15);
+        PrtFreeValue(*P_LVALUE_137);
+        *P_LVALUE_137 = PrtCloneValue((&P_EVENT_AddServer.value));
 
-    PrtSend(&state, clusterMan, PTMP_tmp1_15, 1, &(PTMP_tmp13_1));
-    printf("kdlfjlk\n");
+        PrtSend(&state, clusterMan, PTMP_tmp1_15, 1, &(PTMP_tmp13_1));
+        printf("kdlfjlk\n");
+    }
 }

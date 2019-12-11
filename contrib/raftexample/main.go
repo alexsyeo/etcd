@@ -18,10 +18,10 @@ package main
 import "C"
 import (
 	"flag"
-	"strconv"
+	"fmt"
 	"strings"
 	"sync"
-	"fmt"
+	"strconv"
 
 	"go.etcd.io/etcd/raft/raftpb"
 )
@@ -32,19 +32,20 @@ func main() {
 	cluster := flag.String("cluster", "http://127.0.0.1:9021", "comma separated cluster peers")
 	isetcd := flag.Bool("isetcd", true, "Run with etcd implementation")
 	flag.Parse()
-	var clusterManager *C.PRT_MACHINEINST
-	if !(*isetcd) {
-		clusterManager = C.makeMainMachine()
-	}
+
 	cluster_list := strings.Split(*cluster, ",")
-	for i := 0; i < len(cluster_list); i++ {
-		kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
-		kvport = kvport + 1
-		if !(*isetcd) {
-			C.sendAddMachineEvent(clusterManager)
-		}
-		wg.Add(1)
-		go makeKvStore(cluster_list, i+1, kvport, false, *isetcd)
+	numServers := len(cluster_list)
+	for i := 0; i < numServers; i++ {
+	  kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
+	  kvport = kvport + 1
+	  wg.Add(1)
+	  go makeKvStore(cluster_list, i+1, kvport, false, *isetcd)
+	}
+	if !(*isetcd) {
+		go func (){
+			clusterManager := C.makeMainMachine()
+			C.sendAddMachineEvent(clusterManager, C.int(numServers))
+		}()
 	}
 	wg.Wait()
 }

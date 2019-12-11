@@ -375,8 +375,10 @@ PrtSendPrivate(
 	//
 	//Log
 	//
-	// PrtLog(PRT_STEP_ENQUEUE, state, context, event, payload);
+	//PrtLog(PRT_STEP_ENQUEUE, state, context, event, payload);
 	PrtUnlockMutex(context->stateMachineLock);
+
+	printf("state: %s, event: %d\n", state->stateName, eventIndex);
 
 	PrtScheduleWork(context);
 }
@@ -934,7 +936,7 @@ PrtStepStateMachine(
 		context->postHandlerOperation = DequeueOrReceive;
 		return PrtCallEntryHandler(context);
 	case DequeueOrReceive:
-		//printf("%s\n", "DequeueOrReceive");
+		//printf("DequeueOrReceive, instanceof: %d, state: %d\n", context->instanceOf, context->currentState);
 		PrtLockMutex(context->stateMachineLock);
 		// If the machine is blocked on a receive statement, then
 		// PrtDequeueEvent is guaranteed to return an event meant
