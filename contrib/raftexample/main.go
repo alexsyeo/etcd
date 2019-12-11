@@ -18,7 +18,7 @@ package main
 import "C"
 import (
 	"flag"
-	"fmt"
+	// "fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -35,17 +35,19 @@ func main() {
 
 	cluster_list := strings.Split(*cluster, ",")
 	numServers := len(cluster_list)
-	if !(*isetcd) {
-		clusterManager := C.makeMainMachine()
-		for i := 0; i < numServers; i++ {
-			go C.sendAddMachineEvent(clusterManager, C.int(1))
-		}
-	}
+	
 	for i := 0; i < numServers; i++ {
 		kvport, _ := strconv.Atoi(strings.Split(cluster_list[i], ":")[2])
 		kvport = kvport + 1
 		wg.Add(1)
 		go makeKvStore(cluster_list, i+1, kvport, false, *isetcd)
+	}
+	if !(*isetcd) {
+		clusterManager := C.makeMainMachine()
+		for i := 0; i < numServers; i++ {
+			wg.Add(1)
+			go C.sendAddMachineEvent(clusterManager, C.int(1))
+		}
 	}
 	wg.Wait()
 }
@@ -58,7 +60,7 @@ bool join: join an existing cluster
 func makeKvStore(cluster []string, id int, port int, join bool, etcd bool) {
 	defer wg.Done()
 
-	if etcd {
+	// if etcd {
 		proposeC := make(chan string)
 		defer close(proposeC)
 		confChangeC := make(chan raftpb.ConfChange)
@@ -73,16 +75,16 @@ func makeKvStore(cluster []string, id int, port int, join bool, etcd bool) {
 
 		// the key-value http handler will propose updates to raft
 		serveHttpKVAPI(kvs, port, confChangeC, errorC)
-	} else {
-		fmt.Printf("running without etcd")
-		confChangeC := make(chan raftpb.ConfChange)
-		defer close(confChangeC)
+	// } else {
+	// 	fmt.Printf("running without etcd")
+	// 	confChangeC := make(chan raftpb.ConfChange)
+	// 	defer close(confChangeC)
 
-		var kvs *kvstorep
-		kvs = newPKVStore()
+	// 	var kvs *kvstorep
+	// 	kvs = newPKVStore()
 
-		serveHttpPKVAPI(kvs, port)
+	// 	serveHttpPKVAPI(kvs, port)
 
-	}
+	// }
 
 }

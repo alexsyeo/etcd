@@ -1733,7 +1733,7 @@ void PRT_CALL_CONV
 PrtPrintfDefaultFn(_In_opt_z_ PRT_CSTRING message)
 {
 	// do not allow % signs in message to be interpreted as arguments.
-	//printf_s("%s", message);
+	printf_s("%s", message);
 }
 
 PRT_API void PRT_CALL_CONV

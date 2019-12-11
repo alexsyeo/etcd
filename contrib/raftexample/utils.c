@@ -107,8 +107,9 @@ void sendClientRequest1(PRT_MACHINEINST* context, char key[], char val[]) {
     
     PRT_VALUE** P_LVALUE_1291 = &(PTMP_tmp2_55);
     PrtFreeValue(*P_LVALUE_1291);
+    printf("before p_this\n");
     *P_LVALUE_1291 = PrtCloneValue((p_this->id));
-    
+    printf("after p_this\n");
     PRT_VALUE** P_LVALUE_1292 = &(PTMP_tmp3_51);
     PrtFreeValue(*P_LVALUE_1292);
     *P_LVALUE_1292 = PrtCloneValue((&P_LIT_STRING));
@@ -121,7 +122,7 @@ void sendClientRequest1(PRT_MACHINEINST* context, char key[], char val[]) {
     PrtFreeValue(*P_LVALUE_1294);
 
     // generated type of tuple may change later!
-    *P_LVALUE_1294 = (PrtMkTuple(P_GEND_TYPE_T3Rrr, &(PTMP_tmp2_55), &(PTMP_tmp3_51), &(PTMP_tmp4_43)));
+    *P_LVALUE_1294 = (PrtMkTuple(&P_GEND_TYPE_T3Rrr, &(PTMP_tmp2_55), &(PTMP_tmp3_51), &(PTMP_tmp4_43)));
     
     PRT_MACHINESTATE* state;
     PrtGetMachineState(context, state);
