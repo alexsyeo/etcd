@@ -21,6 +21,7 @@ import (
 	"log"
 	"sync"
 	"time"
+	"math"
 
 	"go.etcd.io/etcd/etcdserver/api/snap"
 )
@@ -32,6 +33,9 @@ type kvstoreetcd struct {
 	kvStore      map[string]string // current committed key-value pairs
 	snapshotter  *snap.Snapshotter
 	proposedVals map[string]time.Time
+	numProcessed int
+	timeStart    time.Time
+	numToProcess int
 }
 
 type kv struct {
@@ -39,8 +43,8 @@ type kv struct {
 	Val string
 }
 
-func newKVStore(snapshotter *snap.Snapshotter, proposeC chan<- string, commitC <-chan *string, errorC <-chan error) *kvstoreetcd {
-	s := &kvstoreetcd{proposeC: proposeC, kvStore: make(map[string]string), proposedVals: make(map[string]time.Time), snapshotter: snapshotter}
+func newKVStore(snapshotter *snap.Snapshotter, proposeC chan<- string, commitC <-chan *string, errorC <-chan error, numToProcess int) *kvstoreetcd {
+	s := &kvstoreetcd{numProcessed: 0, proposeC: proposeC, kvStore: make(map[string]string), proposedVals: make(map[string]time.Time), snapshotter: snapshotter, numToProcess: numToProcess}
 	// replay log into key-value map
 	s.readCommits(commitC, errorC)
 	// read commits from raft into kvStore map until error
@@ -93,7 +97,18 @@ func (s *kvstoreetcd) readCommits(commitC <-chan *string, errorC <-chan error) {
 		s.kvStore[dataKv.Key] = dataKv.Val
 		_, ok := s.proposedVals[dataKv.Key+dataKv.Val]
 		if ok {
-			snap.PutLatency.Observe(time.Since(s.proposedVals[dataKv.Key+dataKv.Val]).Seconds())
+			if s.numProcessed == 0 {
+				s.timeStart = time.Now()
+			}
+				
+			s.numProcessed = s.numProcessed + 1
+			// if s.numProcessed == s.numToProcess {
+			if math.Mod(float64(s.numProcessed), 50) == 0 {
+				log.Printf("Number processed: %d, Time: %d", s.numProcessed, time.Since(s.timeStart).Seconds())
+			}
+				
+			// }
+			//snap.PutLatency.Observe(time.Since(s.proposedVals[dataKv.Key+dataKv.Val]).Seconds())
 			delete(s.proposedVals, dataKv.Key+dataKv.Val)
 		}
 		s.mu.Unlock()
